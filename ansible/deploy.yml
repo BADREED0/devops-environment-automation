@@ -1,0 +1,47 @@
+---
+- name: Deploy Docker and HTTPD Server
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Start and Enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      tags: [docker]
+
+    - name: Login into docker hub
+      community.docker.docker_login:
+        username: badr049
+        password: Bbaaddrr123!!
+
+    - name: Create my_project directory
+      file:
+        path: /home/vagrant/my_project
+        state: directory
+
+    - name: Copy my_project from my host to servers
+      copy:
+        src: /home/badr/DevopsProject/docker
+        dest: /home/vagrant/my_project
+
+    - name: Remove http image
+      command: docker rmi http
+      ignore_errors: yes
+
+    - name: Remove http1 container
+      command: docker rm http1 -f
+      ignore_errors: yes
+
+    - name: Build dockerfile image
+      command: docker build -t http /home/vagrant/my_project/docker
+
+    - name: Run container
+      command: docker run --name http1 -d -p 80:80 http
+
+    - name: tag the created docker image
+      command: docker tag http 192.168.0.106:5000/app
+
+    - name: push the tagged image
+      command: docker push 192.168.0.106:5000/app
+
